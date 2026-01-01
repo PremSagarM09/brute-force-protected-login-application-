@@ -1,18 +1,10 @@
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
-import UsersModel from './user.model';
 import { LoginLog } from '../models/loginLog.model';
 
-@Table({ tableName: 'user_ips', timestamps: true })
-export class UserIp extends Model {
+@Table({ tableName: 'ip_address', timestamps: true })
+export class ipAddressModel extends Model {
   @Column({ type: DataType.INTEGER, primaryKey: true, autoIncrement: true })
   id!: number;
-
-  @ForeignKey(() => UsersModel)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  user_id!: number;
-
-  @BelongsTo(() => UsersModel)
-  user?: UsersModel;
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
   is_ip_blocked!: boolean;
@@ -26,8 +18,14 @@ export class UserIp extends Model {
   @Column({ type: DataType.TINYINT, allowNull: false, defaultValue: 1 })
   status!: boolean;
 
+  @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  createdAt?: Date;
+
+  @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  updatedAt?: Date;
+
   @HasMany(() => LoginLog)
   loginLogs?: LoginLog[];
 }
 
-export default UserIp;
+export default ipAddressModel;

@@ -1,5 +1,5 @@
 import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
-import { UserIp } from './userIp.model';
+import { ipAddressModel } from './ipAddress.model';
 
 @Table({ tableName: 'users', timestamps: true })
 export class UsersModel extends Model {
@@ -38,9 +38,12 @@ export class UsersModel extends Model {
 
   @Column({ type: DataType.TINYINT, allowNull: false, defaultValue: 1 })
   status!: boolean;
+  
+  @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  createdAt?: Date;
 
-  @HasMany(() => UserIp)
-  userIps?: UserIp[];
+  @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
+  updatedAt?: Date;
 }
 
 export default  UsersModel;

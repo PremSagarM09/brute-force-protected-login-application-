@@ -61,6 +61,7 @@ export const getResponseMessage = function (messageKey: string) {
       'User already registered. Please register with other email',
     INVALID_PERMISSIONS: 'Invalid permissions',
     ACCESS_DENIED: 'Access denied',
+    USER_NOT_FOUND: "User details not found. please register",
     INVALID_TOKEN: 'Token not found',
     VALID_TOKEN: 'Valid token',
     VALIDATION_ERROR: 'Validation error occurred',

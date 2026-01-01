@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import envConfig from "../config/config";
 import { UsersModel } from "../models/user.model";
 import bcrypt from 'bcryptjs';
-import UserIp from "../models/userIp.model";
+import ipAddressModel from "../models/ipAddress.model";
 import LoginLog from "../models/loginLog.model";
 import { STATUS_CODES } from "../common/statusCodes";
 import { Op } from "sequelize";
@@ -28,40 +28,41 @@ export const login = async (
     try {
         const { email, password, ip_address } = loginData;
 
+        // Verify user existence with given email
         const user: any = await UsersModel.findOne({
             where: { email: email?.trim() },
-            include: [
-                {
-                    model: UserIp,
-                    where: { ip_address },
-                    required: false
-                }
-            ]
         });
 
         if (!user) {
             return setErrorResponse({
-                message: getResponseMessage('INVALID_CREDENTIALS'),
+                message: getResponseMessage('USER_NOT_FOUND'),
                 statusCode: STATUS_CODES.BAD_REQUEST
             });
         }
 
-        const block_15 = Boolean(user.block_15);
-        const maxAttempts = Number(user.max_attempts ?? 5);
-        const maxIpAttempts = Number(user.max_ip_attempts ?? 100);
-        let message: string = getResponseMessage('INVALID_CREDENTIALS');
-        let ipDetails = user.userIps?.[0];
+        // Check if IP is already registered or not and block status
+        const [ipBlockDetails, created] = await ipAddressModel.findOrCreate({
+            where: { ip_address },
+            defaults: { number_of_attempts: 0, is_ip_blocked: false }
+        });
 
-        if (ipDetails?.is_ip_blocked) {
+        if (ipBlockDetails?.is_ip_blocked) {
             return setErrorResponse({
                 message: getResponseMessage('IP_BLOCKED'),
                 statusCode: STATUS_CODES.BAD_REQUEST
             });
         }
 
+
+        const block_15 = Boolean(user.block_15);
+        const maxAttempts = Number(user.max_attempts ?? 5);
+        const maxIpAttempts = Number(user.max_ip_attempts ?? 100);
+        let failedAttempts = 0;
+        let message: string = getResponseMessage('INVALID_CREDENTIALS');
+
         if (block_15) {
-            const lastLoginAttempt = await LoginLog.findOne({
-                where: { ip_id: user.userIps?.[0]?.id },
+            const lastLoginAttempt: any = await LoginLog.findOne({
+                where: { user_id: user.id },
                 order: [['id', 'DESC']]
             });
             if (lastLoginAttempt) {
@@ -73,7 +74,7 @@ export const login = async (
                         { where: { id: user.id } }
                     );
                 }
-            }else {
+            } else {
                 return setErrorResponse({
                     message: getResponseMessage('USER_BLOCKED_FOR_TOO_MANY_ATTEMPTS'),
                     statusCode: STATUS_CODES.BAD_REQUEST
@@ -81,21 +82,21 @@ export const login = async (
             }
         }
 
-        if (ipDetails) {
-
+        if (!created) {
             const now = Date.now();
             const fiveMinutesAgo = new Date(now - 5 * 60 * 1000);
 
             const failedAttemptsLast5Min = await LoginLog.count({
                 where: {
-                    ip_id: ipDetails.id,
+                    ip_id: ipBlockDetails.id,
+                    user_id: user.id,
                     createdAt: {
                         [Op.gte]: fiveMinutesAgo,
                         [Op.lte]: now
                     }
                 }
             });
-
+            failedAttempts = failedAttemptsLast5Min
             if (failedAttemptsLast5Min >= maxAttempts) {
                 await UsersModel.update(
                     { block_15: true },
@@ -128,12 +129,11 @@ export const login = async (
                 { where: { id: user.id } }
             );
 
-            const [userIp] = await UserIp.findOrCreate({
-                where: { ip_address, user_id: user.id },
-                defaults: { number_of_attempts: 1, is_ip_blocked: false }
+            await LoginLog.create({
+                ip_id: ipBlockDetails.id,
+                user_id: user.id,
+                is_successful: true
             });
-
-            await LoginLog.create({ ip_id: userIp.id });
 
             return setSuccessResponse({
                 message: getResponseMessage('LOGIN_SUCCESS'),
@@ -144,28 +144,29 @@ export const login = async (
             });
         }
 
-        if (ipDetails) {
-            const ipAttempts = Number(ipDetails.number_of_attempts ?? 0) + 1;
+        const number_of_attempts = Number(ipBlockDetails.number_of_attempts ?? 0) + 1;
+        const is_ip_blocked = number_of_attempts >= maxIpAttempts;
+        const isUserBlocked = failedAttempts + 1 >= maxAttempts;
 
-            await UserIp.update(
-                {
-                    number_of_attempts: ipAttempts,
-                    is_ip_blocked: ipAttempts >= maxIpAttempts
-                },
-                { where: { id: ipDetails.id } }
-            );
-            if (ipAttempts >= maxIpAttempts) {
-                message = getResponseMessage('IP_BLOCKED');
-            }
-        } else {
-            const [createdIp] = await UserIp.findOrCreate({
-                where: { ip_address, user_id: user.id },
-                defaults: { number_of_attempts: 1, is_ip_blocked: false }
-            });
 
-            ipDetails = createdIp;
+        if (isUserBlocked) {
+            message = getResponseMessage('USER_BLOCKED_FOR_TOO_MANY_ATTEMPTS')
         }
-        await LoginLog.create({ ip_id: ipDetails.id });
+
+        if (is_ip_blocked) {
+            message = getResponseMessage('IP_BLOCKED');
+        }
+
+        await user.update({
+            block_15: isUserBlocked
+        })
+        await LoginLog.create({ ip_id: ipBlockDetails.id, user_id: user.id });
+
+        await ipBlockDetails.update({
+            number_of_attempts,
+            is_ip_blocked
+        });
+
 
         return setErrorResponse({
             message,

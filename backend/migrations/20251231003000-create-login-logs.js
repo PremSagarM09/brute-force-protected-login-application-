@@ -13,11 +13,26 @@ module.exports = {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: 'user_ips',
+          model: 'ip_address',
           key: 'id'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
+      },
+      user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      is_successful: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: false
       },
       status: {
         type: DataTypes.TINYINT,

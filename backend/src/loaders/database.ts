@@ -1,7 +1,7 @@
 import config from '../config/config';
 import { Sequelize } from 'sequelize-typescript';
 import { UsersModel } from '../models/user.model';
-import { UserIp } from '../models/userIp.model';
+import { ipAddressModel } from '../models/ipAddress.model';
 import { LoginLog } from '../models/loginLog.model';
 
 const { database, username, password, port, host, dialect } =
@@ -14,7 +14,7 @@ export const sequelize = new Sequelize(database, username, password, {
 });
 
 // Register models with sequelize-typescript so `sequelize.sync()` picks them up
-sequelize.addModels([UsersModel, UserIp, LoginLog]);
+sequelize.addModels([UsersModel, ipAddressModel, LoginLog]);
 
 sequelize
   .authenticate()
