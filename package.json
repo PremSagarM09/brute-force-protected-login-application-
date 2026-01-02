@@ -1,0 +1,25 @@
+{
+  "name": "login",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "frontend-build": "cd frontend && npm install && npm run build",
+    "frontend-start": "cd frontend && npm run dev",
+    "backend-build": "cd backend && npm install && npm test && npm run build",
+    "backend-start": "cd backend && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PremSagarM09/brute-force-protected-login-application-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PremSagarM09/brute-force-protected-login-application-/issues"
+  },
+  "homepage": "https://github.com/PremSagarM09/brute-force-protected-login-application-#readme"
+}
