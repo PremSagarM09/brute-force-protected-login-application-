@@ -13,3 +13,7 @@ Run after installing dependencies:
 - Run migrations to up: `npm run migrate:up`
 - To undo last migration: `npm run migrate:down`
 - To generate migration file: `npm run migrate:generate`
+
+
+To unit test cases 
+- Run command:  `npm run test`
