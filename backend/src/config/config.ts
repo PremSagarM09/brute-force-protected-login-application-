@@ -1,9 +1,9 @@
-import dotenv from 'dotenv';
-const envFound = dotenv.config({ path: '.env' });
-if (envFound.error) {
-  // This error should crash whole process
-  throw new Error("⚠️  Couldn't find .env file  ⚠️");
-}
+// import dotenv from 'dotenv';
+// const envFound = dotenv.config({ path: '.env' });
+// if (envFound.error) {
+//   // This error should crash whole process
+//   throw new Error("⚠️  Couldn't find .env file  ⚠️");
+// }
 
 const environment: any = {
   port: process.env['PORT'] || '3000',
